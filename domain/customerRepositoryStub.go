@@ -1,6 +1,7 @@
 package domain
 
 //THIS IS BASICALLY A MOCK ADAPTER SINCE WE DON'T HAVE A DB SETUP
+//UPDATE: A DB IS SETUP SO WE NO LONGER NEED TO ACCESS THIS MOCK
 //create an adapter for the interface port
 type CustomerRepositoryStub struct {
 	customers []Customer

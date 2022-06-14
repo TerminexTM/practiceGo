@@ -3,23 +3,27 @@ package app
 import (
 	"UdemyREST/domain"
 	"UdemyREST/service"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
+var addr = "localhost:8000"
+
 func Start() {
 	router := mux.NewRouter()
 
 	//wiring for application -- attach to the route in order to reference the appropriate method in the handler
-	ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryStub())}
+	//ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryStub())}
+	ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryDB())}
 	//defined routes
 
 	router.HandleFunc("/customers", ch.GetAllCustomers).Methods(http.MethodGet)
-
+	fmt.Println("Listening on: " + addr)
 	//starting the server. Returns error if issue starting server
-	log.Fatal(http.ListenAndServe("localhost:8000", router))
+	log.Fatal(http.ListenAndServe(addr, router))
 
 }
 
