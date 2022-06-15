@@ -1,48 +1,99 @@
 package domain
 
 import (
+	"UdemyREST/errs"
+	"UdemyREST/logger"
 	"database/sql"
-	"log"
+	"fmt"
+	"os"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
+//Sqlx is nice because it handles some error handling and communication
 type CustomerRepositoryDB struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 //found from looking up mysql connection docs
-func (d CustomerRepositoryDB) FindAll() ([]Customer, error) {
+func (d CustomerRepositoryDB) FindAll(status string) ([]Customer, *errs.AppError) {
 
-	//custom query logic
-	findAllSql := "select customer_id, name, city, zipcode, date_of_birth, status from customers"
-
-	//make query with custom logic
-	rows, err := d.db.Query(findAllSql) //information for the method is passed from the receiver "d"
-	if err != nil {
-		log.Println("Error While Querying Customer Table " + err.Error())
-		return nil, err
-	}
-	//create a customers object that is based on the dto of Customer
+	//var rows *sql.Rows
+	var err error
 	customers := make([]Customer, 0)
-	//loop through data, map it to Customer and apply it to the customers object
-	for rows.Next() {
-		var c Customer
-		err := rows.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.DateOfBirth, &c.Status)
-		if err != nil {
-			log.Println("Error While Scanning Customer " + err.Error())
-			return nil, err
-		}
-		customers = append(customers, c)
+	//custom query logic
+	if status == "" {
+		findAllSql := "select customer_id, name, city, zipcode, date_of_birth, status from customers"
+		err = d.db.Select(&customers, findAllSql)
+		//rows, err = d.db.Query(findAllSql)
+	} else {
+		findAllSql := "select customer_id, name, city, zipcode, date_of_birth, status from customers where status = ?"
+		err = d.db.Select(&customers, findAllSql, status)
+		//rows, err = d.db.Query(findAllSql, status)
 	}
-	//return the customers object
+	if err != nil {
+		logger.Error("Error While Querying Customers Table " + err.Error())
+		return nil, errs.NewUnexpectedError("unexpected database error")
+	}
 	return customers, nil
+	//create a customers object that is based on the dto of Customer
+	//---Made obsolete by calling sqlx to query and select in one call
+	// err = sqlx.StructScan(rows, &customers)
+	// if err != nil {
+	// 	logger.Error("Error While Scanning Customer " + err.Error())
+	// 	return nil, errs.NewUnexpectedError("unexpected database error")
+	// }
+
+	//---Package Sqlx streamlines this code on line 36------
+	//loop through data, map it to Customer and apply it to the customers object
+	// for rows.Next() {
+	// 	var c Customer
+	// 	err := rows.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.DateOfBirth, &c.Status)
+	// 	if err != nil {
+	// 		logger.Error("Error While Scanning Customer " + err.Error())
+	// 		return nil, errs.NewUnexpectedError("unexpected database error")
+	// 	}
+	// 	customers = append(customers, c)
+	// }
+	//return the customers object
+
+}
+
+//define a method into the repository layer to find by id
+func (d CustomerRepositoryDB) ById(id string) (*Customer, *errs.AppError) { //returning a custom app error from our error file
+	customerSql := "select customer_id, name, city, zipcode, date_of_birth, status from customers where customer_id = ?"
+
+	//---Get method of sqlx streamlines this.
+	//row := d.db.QueryRow(customerSql, id)
+	var c Customer
+	err := d.db.Get(&c, customerSql, id)
+	//err := row.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.DateOfBirth, &c.Status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			//better definition if customer is not found at ID
+			return nil, errs.NewNotFoundError("customer not found")
+		} else {
+			logger.Error("Error while scanning customer " + err.Error())
+			//hide the technical error message for when db is down
+			return nil, errs.NewUnexpectedError("unexpected database error")
+		}
+	}
+	return &c, nil
+
 }
 
 //helper function to create a db instance user:password@localhost:port/DBname
 func NewCustomerRepositoryDB() CustomerRepositoryDB {
-	db, err := sql.Open("mysql", "root:Dubu123@@tcp(localhost:3306)/banking")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASS")
+	dbAddr := os.Getenv("DB_ADDR")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	//"root:Dubu123@@tcp(localhost:3306)/banking"
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbAddr, dbPort, dbName)
+	db, err := sqlx.Open("mysql", dataSource)
 	if err != nil {
 		panic(err)
 	}
