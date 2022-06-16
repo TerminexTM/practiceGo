@@ -4,9 +4,6 @@ import (
 	"UdemyREST/errs"
 	"UdemyREST/logger"
 	"database/sql"
-	"fmt"
-	"os"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -85,21 +82,7 @@ func (d CustomerRepositoryDB) ById(id string) (*Customer, *errs.AppError) { //re
 }
 
 //helper function to create a db instance user:password@localhost:port/DBname
-func NewCustomerRepositoryDB() CustomerRepositoryDB {
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASS")
-	dbAddr := os.Getenv("DB_ADDR")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
-	//"root:Dubu123@@tcp(localhost:3306)/banking"
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbAddr, dbPort, dbName)
-	db, err := sqlx.Open("mysql", dataSource)
-	if err != nil {
-		panic(err)
-	}
+func NewCustomerRepositoryDB(dbClient *sqlx.DB) CustomerRepositoryDB {
 
-	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
-	return CustomerRepositoryDB{db}
+	return CustomerRepositoryDB{dbClient}
 }

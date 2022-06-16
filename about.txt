@@ -19,4 +19,12 @@ DTO improves modularity,
 The transformation is done on the business side.
 * dto is mapped with user side layer.
 * domain object is mapped with server side layer.
-- Change domain object so that it isn't being used as a dto
+DONE- Change domain object so that it isn't being used as a dto
+
+
+API to create a new account for an existing customer.
+Acceptance criteria
+DONE- A new account can only be opened with a minimum deposit of $5000
+DONE- Account can only be of saving or checking type
+DONE- In case of an unexpected error, API should return http status code 500 (Internal service error) along with the error message 
+DONE- The api should return the new account id, when the new account is opened with the status code as 201 (CREATED).
