@@ -28,3 +28,23 @@ DONE- A new account can only be opened with a minimum deposit of $5000
 DONE- Account can only be of saving or checking type
 DONE- In case of an unexpected error, API should return http status code 500 (Internal service error) along with the error message 
 DONE- The api should return the new account id, when the new account is opened with the status code as 201 (CREATED).
+
+
+
+Application Routes
+
+
+admin can do all
+1)Get All Customers     GET /customer
+2)Get Customer by ID    GET /customer/{customer_id}
+3)Create new account    POST /customer/{customer_id}/account
+4)Make a transaction    POST /customer/{customer_id}/account/{account_id}
+
+user can do
+4)Make a transaction    POST /customer/{customer_id}/account/{account_id}
+2)Get Customer by ID    GET /customer/{customer_id}
+
+
+Lets say we want an admin for the API can do all 4 tasks
+
+There is another user who is a user of the bank, he can only see his bank information and interact with only his bank accounts 2,4.
